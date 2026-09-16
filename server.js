@@ -3,36 +3,28 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+const industryRoutes = require("./routes/industryRoutes");
+const wasteRoutes = require("./routes/WasteRoutes");
 const resourceRequestRoutes = require("./routes/ResourceRequestRoutes");
+const matchingRoutes = require("./routes/MatchingRoutes");
+const notificationRoutes = require("./routes/NotificationRoutes");
 
 const app = express();
-
-// =========================
-// MIDDLEWARE
-// =========================
 
 app.use(cors());
 app.use(express.json());
 
-
-// =========================
-// ROUTES
-// =========================
-
+app.use("/api/industries", industryRoutes);
+app.use("/api/wastes", wasteRoutes);
 app.use("/api/requests", resourceRequestRoutes);
+app.use("/api/matching", matchingRoutes);
+app.use("/api/notifications", notificationRoutes);
 
-
-// Test route
 app.get("/", (req, res) => {
     res.json({
         message: "Welcome to ReSourceX API"
     });
 });
-
-
-// =========================
-// MONGODB CONNECTION
-// =========================
 
 const MONGO_URI =
     process.env.MONGO_URI ||
@@ -42,10 +34,6 @@ mongoose
     .connect(MONGO_URI)
     .then(() => {
         console.log("MongoDB Connected");
-
-        // =========================
-        // SERVER
-        // =========================
 
         const PORT = process.env.PORT || 5000;
 

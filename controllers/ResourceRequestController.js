@@ -1,9 +1,16 @@
 const ResourceRequest = require("../models/ResourceRequest");
+const Notification = require("../models/Notification");
 
-// Create a new resource request
 const createRequest = async (req, res) => {
     try {
         const request = await ResourceRequest.create(req.body);
+
+        await Notification.create({
+            type: "New Request",
+            title: "New Resource Request",
+            message: `${request.requesterName} submitted a new resource request`,
+            request: request._id
+        });
 
         res.status(201).json({
             success: true,
@@ -11,8 +18,6 @@ const createRequest = async (req, res) => {
             data: request
         });
     } catch (error) {
-        console.error("Create request error:", error);
-
         res.status(500).json({
             success: false,
             message: error.message
@@ -20,13 +25,11 @@ const createRequest = async (req, res) => {
     }
 };
 
-
-// Get all resource requests
 const getRequests = async (req, res) => {
     try {
-        const requests = await ResourceRequest
-            .find()
-            .populate("waste");
+        const requests = await ResourceRequest.find()
+            .populate("waste")
+            .sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -34,8 +37,6 @@ const getRequests = async (req, res) => {
             data: requests
         });
     } catch (error) {
-        console.error("Get requests error:", error);
-
         res.status(500).json({
             success: false,
             message: error.message
@@ -43,12 +44,9 @@ const getRequests = async (req, res) => {
     }
 };
 
-
-// Get one resource request
 const getRequestById = async (req, res) => {
     try {
-        const request = await ResourceRequest
-            .findById(req.params.id)
+        const request = await ResourceRequest.findById(req.params.id)
             .populate("waste");
 
         if (!request) {
@@ -63,8 +61,6 @@ const getRequestById = async (req, res) => {
             data: request
         });
     } catch (error) {
-        console.error("Get request error:", error);
-
         res.status(500).json({
             success: false,
             message: error.message
@@ -72,9 +68,47 @@ const getRequestById = async (req, res) => {
     }
 };
 
+const updateRequestStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        if (!["Pending", "Approved", "Rejected"].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid status"
+            });
+        }
+
+        const request = await ResourceRequest.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        ).populate("waste");
+
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: "Resource request not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Request ${status.toLowerCase()} successfully`,
+            data: request
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
 
 module.exports = {
     createRequest,
     getRequests,
-    getRequestById
+    getRequestById,
+    updateRequestStatus
 };
+
